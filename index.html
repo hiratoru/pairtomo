@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ペアトモ（仮）試用版</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F7F5F0;--ink:#22252A;--sub:#5F646A;--line:#E3E0D8;--chipline:#D6D2C8;--accent:#2F6F6A;--accent-d:#234F4B;--accent-l:#E6EFEE;--warm:#B5562F;--card:#FFFFFF;--soft:#F1EEE7}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#E9E6DF}
+body{font-family:'Noto Sans JP',system-ui,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.app{max-width:440px;margin:0 auto;min-height:100%;background:var(--bg);display:flex;flex-direction:column;position:relative}
+header.top{display:flex;align-items:center;gap:8px;padding:16px 16px 8px;min-height:64px}
+header.top h1{margin:0;font-size:18px;font-weight:700;flex-grow:1}
+.brand{font-size:13px;font-weight:700;color:var(--accent);letter-spacing:.08em}
+main{flex-grow:1;padding:4px 20px 24px;display:flex;flex-direction:column;gap:20px}
+.iconbtn{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:none;background:transparent;color:var(--ink);cursor:pointer;border-radius:12px}
+.iconbtn:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid #8DB8B4;outline-offset:2px}
+.label{font-size:13px;font-weight:700;color:#555A60;margin:0}
+.hint{font-size:12px;color:var(--sub);margin:0}
+section{display:flex;flex-direction:column;gap:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:0 16px;border-radius:22px;font:inherit;font-size:14px;cursor:pointer;background:#fff;color:var(--ink);border:1px solid var(--chipline)}
+.chip[aria-pressed="true"]{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+.typecard{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:16px 18px;border-radius:16px;cursor:pointer;font:inherit;background:#fff;border:2px solid var(--line);text-align:left}
+.typecard[aria-pressed="true"]{border-color:var(--accent)}
+.typecard .t{font-size:16px;font-weight:700;display:block}
+.typecard .d{font-size:13px;color:#555A60;line-height:1.6;display:block;margin-top:2px}
+.dot{flex-shrink:0;width:22px;height:22px;border-radius:11px;border:2px solid #B9B5AC}
+.typecard[aria-pressed="true"] .dot{border:7px solid var(--accent)}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:13px;font-weight:700;color:#555A60}
+input[type=text],input[type=number],textarea,select{font:inherit;font-size:15px;color:var(--ink);background:#fff;border:1px solid var(--chipline);border-radius:12px;padding:0 14px;min-height:46px;width:100%}
+textarea{padding:12px 14px;min-height:110px;resize:vertical;line-height:1.7}
+.row{display:flex;gap:10px;align-items:center}
+.row > *{flex:1;min-width:0}
+.primary{display:flex;align-items:center;justify-content:center;width:100%;height:54px;border-radius:27px;background:var(--accent);color:#fff;font:inherit;font-size:16px;font-weight:700;border:none;cursor:pointer}
+.primary:disabled{background:#9DB5B2;cursor:not-allowed}
+.secondary{display:flex;align-items:center;justify-content:center;width:100%;min-height:48px;border-radius:24px;background:#fff;color:var(--accent);font:inherit;font-size:15px;font-weight:700;border:1px solid var(--accent);cursor:pointer}
+.footer{position:sticky;bottom:0;padding:12px 20px 20px;background:var(--bg);border-top:1px solid var(--line)}
+.card{display:flex;flex-direction:column;gap:10px;padding:16px;background:#fff;border:1px solid var(--line);border-radius:16px;text-align:left;font:inherit;color:var(--ink);cursor:pointer;width:100%}
+.avs{display:flex}
+.av{display:flex;align-items:center;justify-content:center;border-radius:50%;border:2px solid #fff;color:#fff;font-weight:700}
+.av + .av{margin-left:-10px}
+.tag{font-size:12px;padding:3px 10px;border-radius:12px;background:var(--soft);color:#4A4E54}
+.tag.hit{background:var(--accent);color:#fff;font-weight:700}
+.pill{font-size:12px;font-weight:700;color:var(--accent-d);background:var(--accent-l);border-radius:10px;padding:3px 8px;white-space:nowrap}
+.summary{display:flex;flex-wrap:wrap;gap:6px}
+.summary span{font-size:12px;padding:4px 10px;border-radius:12px;background:var(--accent-l);color:var(--accent-d)}
+.empty{background:#fff;border:1px dashed var(--chipline);border-radius:16px;padding:24px 18px;text-align:center;color:#4A4E54;font-size:14px;line-height:1.8}
+nav.tabs{position:sticky;bottom:0;display:flex;justify-content:space-around;padding:6px 8px 14px;background:#fff;border-top:1px solid var(--line)}
+nav.tabs button{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:72px;min-height:48px;border:none;background:transparent;font:inherit;font-size:11px;color:var(--sub);cursor:pointer;position:relative}
+nav.tabs button[aria-current="page"]{color:var(--accent);font-weight:700}
+.badge{position:absolute;top:0;right:16px;min-width:18px;height:18px;border-radius:9px;background:var(--warm);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 5px}
+.msgs{display:flex;flex-direction:column;gap:12px;padding:8px 0}
+.msg{display:flex;flex-direction:column;gap:2px;max-width:78%}
+.msg.me{align-self:flex-end;align-items:flex-end}
+.msg.them{align-self:flex-start;align-items:flex-start}
+.bubble{padding:10px 14px;font-size:14px;line-height:1.6;border-radius:18px;white-space:pre-wrap;word-break:break-word}
+.me .bubble{background:var(--accent);color:#fff;border-bottom-right-radius:6px}
+.them .bubble{background:#fff;border:1px solid var(--line);border-bottom-left-radius:6px}
+.time{font-size:10px;color:var(--sub)}
+.composer{position:sticky;bottom:0;display:flex;gap:8px;align-items:flex-end;padding:10px 12px 16px;background:#fff;border-top:1px solid var(--line)}
+.composer textarea{min-height:44px;height:44px;border-radius:22px;padding:10px 16px;background:var(--bg)}
+.send{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:22px;border:none;background:var(--accent);color:#fff;cursor:pointer}
+.notice{font-size:12px;line-height:1.7;color:#4A4E54;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.err{color:#9B3A1A;font-size:13px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.center{text-align:center}
+</style>
+</head>
+<body>
+<div class="app" id="app"><main><p class="hint center" style="padding-top:40vh">読み込み中…</p></main></div>
+<script>
+(function(){
+'use strict';
+var HOBBIES=['アウトドア','キャンプ','料理','フェス・音楽','旅行','カフェ巡り','スポーツ観戦','お酒','ゲーム','映画','ペット','サウナ'];
+var AREAS=['福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','山口県','オンラインのみ'];
+var TYPES=[
+  {id:'couple',title:'夫婦 × 夫婦',desc:'夫婦ぐるみで遊べる友だち夫婦をさがす',me:'夫婦で登録'},
+  {id:'wife',title:'妻どうし',desc:'子なしの専業主婦・共働きの妻どうしでつながる',me:'妻として登録'},
+  {id:'husband',title:'夫どうし',desc:'子なしの夫どうしで、趣味や話の合う仲間をさがす',me:'夫として登録'}
+];
+var COLORS=['#2F6F6A','#B5562F','#3B5BA9','#6B5B95','#8A6D1F'];
+var THIS_YEAR=new Date().getFullYear();
+
+var S={view:'loading',db:null,user:null,me:null,canWrite:true,profiles:{},profilesLoaded:false,threads:[],threadsLoaded:false,
+  draft:null,cond:{from:THIS_YEAR-45,to:THIS_YEAR-25,hobbies:[],area:''},detailId:null,chatId:null,msgs:[],msgsLoaded:false,
+  unsubMsgs:null,error:'',saving:false,offlineNote:''};
+try{var c=JSON.parse(localStorage.getItem('pairtomo-cond')||'null');if(c&&typeof c.from==='number')S.cond=c;}catch(e){}
+
+function h(tag,attrs){
+  var el=document.createElement(tag);
+  if(attrs)for(var k in attrs){var v=attrs[k];if(v==null||v===false)continue;
+    if(k==='text')el.textContent=v;else if(k==='html')el.innerHTML=v;else if(k.slice(0,2)==='on')el.addEventListener(k.slice(2),v);else if(k==='style')el.setAttribute('style',v);else el.setAttribute(k,v===true?'':v);}
+  for(var i=2;i<arguments.length;i++){var c=arguments[i];if(c==null||c===false)continue;
+    if(Array.isArray(c))c.forEach(function(x){if(x!=null&&x!==false)el.appendChild(typeof x==='string'?document.createTextNode(x):x);});
+    else el.appendChild(typeof c==='string'?document.createTextNode(c):c);}
+  return el;
+}
+var ICON={
+  back:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
+  search:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>',
+  chat:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>',
+  me:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>',
+  send:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>',
+  filter:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>'
+};
+function icon(n){var s=document.createElement('span');s.style.display='inline-flex';s.innerHTML=ICON[n];return s;}
+
+function typeOf(id){for(var i=0;i<TYPES.length;i++)if(TYPES[i].id===id)return TYPES[i];return TYPES[0];}
+function myProfile(){return S.me?S.profiles[S.me]:null;}
+function hash(s){var x=0;for(var i=0;i<s.length;i++)x=(x*31+s.charCodeAt(i))|0;return Math.abs(x);}
+function avatars(p,id,size){
+  var name=(p&&p.nickname)||'？';var ch=Array.from(name)[0]||'？';var c=hash(id||name);
+  var st=function(col){return 'width:'+size+'px;height:'+size+'px;font-size:'+Math.round(size*0.38)+'px;background:'+col;};
+  var wrap=h('div',{class:'avs','aria-hidden':'true'},h('span',{class:'av',style:st(COLORS[c%COLORS.length]),text:ch}));
+  if(p&&p.type==='couple')wrap.appendChild(h('span',{class:'av',style:st(COLORS[(c+1)%COLORS.length]),text:'＆'}));
+  return wrap;
+}
+function yearsText(p){
+  var y=(p.years||[]).filter(function(n){return typeof n==='number';});
+  if(p.type==='couple')return '夫 '+(y[0]||'?')+'年・妻 '+(y[1]||'?')+'年生まれ';
+  return (y[0]||'?')+'年生まれ';
+}
+function common(p){var mine=(myProfile()&&myProfile().hobbies)||[];return (p.hobbies||[]).filter(function(x){return mine.indexOf(x)>=0;});}
+function fmtTime(t){if(!t)return '';var d=new Date(t);var now=new Date();var hm=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  if(d.toDateString()===now.toDateString())return hm;return (d.getMonth()+1)+'/'+d.getDate()+' '+hm;}
+function tid(a,b){return [a,b].sort().join('__');}
+function cleanStr(v,max){return typeof v==='string'?v.slice(0,max):'';}
+
+function normalize(v){
+  if(!v||typeof v!=='object')return null;
+  var types=['couple','wife','husband'];if(types.indexOf(v.type)<0)return null;
+  return {type:v.type,nickname:cleanStr(v.nickname,20)||'（名前なし）',
+    years:Array.isArray(v.years)?v.years.filter(function(n){return typeof n==='number'&&isFinite(n);}).slice(0,2):[],
+    area:cleanStr(v.area,20),hobbies:Array.isArray(v.hobbies)?v.hobbies.filter(function(x){return typeof x==='string';}).map(function(x){return x.slice(0,20);}).slice(0,12):[],
+    bio:cleanStr(v.bio,400),wants:cleanStr(v.wants,60),updatedAt:typeof v.updatedAt==='number'?v.updatedAt:0};
+}
+function setView(v,extra){
+  if(S.sb&&(v==='results'||v==='threads'))setTimeout(function(){if(v==='results')loadProfiles();else loadThreads();},0);
+  if(S.view==='chat'&&v!=='chat'&&S.unsubMsgs){S.unsubMsgs();S.unsubMsgs=null;}
+  for(var k in (extra||{}))S[k]=extra[k];
+  S.view=v;S.error='';render();window.scrollTo(0,0);
+}
+
+/* ---------- screens ---------- */
+function topBar(title,backTo){
+  return h('header',{class:'top'},
+    backTo?h('button',{class:'iconbtn','aria-label':'戻る',onclick:function(){setView(backTo);}},icon('back')):null,
+    h('h1',{text:title}));
+}
+function tabs(active){
+  var unread=S.threads.filter(function(t){return t.lastFrom&&t.lastFrom!==S.me&&!((t.readBy||{})[S.me]>=t.lastAt);}).length;
+  var b=function(id,label,ic,go){return h('button',{'aria-current':active===id?'page':null,onclick:go},icon(ic),label,id==='threads'&&unread?h('span',{class:'badge','aria-label':'未読'+unread+'件',text:String(unread)}):null);};
+  return h('nav',{class:'tabs','aria-label':'メインメニュー'},
+    b('search','さがす','search',function(){setView('search');}),
+    b('threads','メッセージ','chat',function(){setView('threads');}),
+    b('mypage','マイページ','me',function(){setView('mypage');}));
+}
+
+function viewNoDb(){
+  return [topBar('ペアトモ（仮）'),h('main',null,
+    h('div',{class:'empty'},S.bootError||'サーバーにつながりませんでした。',h('br'),'時間をおいて開き直してください。'))];
+}
+
+function viewSetup(){
+  var editing=!!myProfile();
+  if(!S.draft){var p=myProfile()||{};S.draft={type:p.type||'couple',nickname:p.nickname||'',years:(p.years||[]).slice(),area:p.area||'福岡県',hobbies:(p.hobbies||[]).slice(),bio:p.bio||'',wants:p.wants||''};}
+  var d=S.draft;
+  var els=[];
+  els.push(topBar(editing?'プロフィールを編集':'はじめに',editing?'mypage':null));
+  var m=h('main');
+  if(!editing)m.appendChild(h('div',null,h('div',{class:'brand',text:'ペアトモ（仮）'}),
+    h('p',{style:'margin:8px 0 0;font-size:22px;font-weight:700;line-height:1.5',text:'子どものいない夫婦どうし、気の合う仲間を見つけよう'}),
+    h('p',{class:'hint',style:'margin-top:8px;line-height:1.7',text:'まずは自分たちのプロフィールを登録してください。あとから変更できます。'})));
+  var typeSec=h('section',null,h('p',{class:'label',text:'登録のしかた（同じ種類どうしでマッチングします）'}));
+  TYPES.forEach(function(t){typeSec.appendChild(h('button',{type:'button',class:'typecard','aria-pressed':d.type===t.id?'true':'false',onclick:function(){d.type=t.id;render();}},
+    h('span',null,h('span',{class:'t',text:t.me+'：'+t.title}),h('span',{class:'d',text:t.desc})),h('span',{class:'dot'})));});
+  m.appendChild(typeSec);
+  m.appendChild(h('div',{class:'field'},h('label',{for:'nick',text:'表示する名前（ニックネーム）'}),
+    h('input',{type:'text',id:'nick',maxlength:'20',placeholder:'例：Kさん夫婦',value:d.nickname,oninput:function(e){d.nickname=e.target.value;}})));
+  var yearRow=h('div',{class:'row'});
+  var yl=d.type==='couple'?['夫の生まれ年','妻の生まれ年']:['生まれ年'];
+  yl.forEach(function(lb,i){yearRow.appendChild(h('div',{class:'field'},h('label',{for:'y'+i,text:lb}),
+    h('input',{type:'number',id:'y'+i,inputmode:'numeric',min:'1940',max:String(THIS_YEAR-18),placeholder:'1990',value:d.years[i]!=null?String(d.years[i]):'',
+      oninput:function(e){var n=parseInt(e.target.value,10);d.years[i]=isNaN(n)?null:n;}})));});
+  m.appendChild(yearRow);
+  var areaSel=h('select',{id:'area',onchange:function(e){d.area=e.target.value;}});
+  AREAS.forEach(function(a){areaSel.appendChild(h('option',{value:a,selected:d.area===a,text:a}));});
+  m.appendChild(h('div',{class:'field'},h('label',{for:'area',text:'住んでいるエリア'}),areaSel));
+  var hs=h('div',{class:'chips'});
+  HOBBIES.forEach(function(x){var on=d.hobbies.indexOf(x)>=0;hs.appendChild(h('button',{type:'button',class:'chip','aria-pressed':on?'true':'false',
+    onclick:function(){if(on)d.hobbies=d.hobbies.filter(function(y){return y!==x;});else d.hobbies.push(x);render();}},x));});
+  m.appendChild(h('section',null,h('p',{class:'label',text:'趣味（いくつでも）'}),hs));
+  m.appendChild(h('div',{class:'field'},h('label',{for:'bio',text:'自己紹介'}),
+    h('textarea',{id:'bio',maxlength:'400',placeholder:'例：結婚8年目の夫婦です。周りの友だちが子育て中で、気軽に遊べる夫婦を探しています。',oninput:function(e){d.bio=e.target.value;}},d.bio)));
+  m.appendChild(h('div',{class:'field'},h('label',{for:'wants',text:'一緒にやりたいこと'}),
+    h('input',{type:'text',id:'wants',maxlength:'60',placeholder:'例：デイキャンプ、夏フェス、ごはん会',value:d.wants,oninput:function(e){d.wants=e.target.value;}})));
+  if(S.error)m.appendChild(h('p',{class:'err',role:'alert',text:S.error}));
+  els.push(m);
+  els.push(h('div',{class:'footer'},h('button',{class:'primary',disabled:S.saving||!S.canWrite,onclick:saveProfile},S.saving?'保存中…':(editing?'保存する':'登録してはじめる')),
+    !S.canWrite?h('p',{class:'hint center',style:'margin-top:8px',text:'このページへの書き込み権限がありません。共有してくれた人に「編集者」で招待してもらってください。'}):null));
+  return els;
+}
+function saveProfile(){
+  var d=S.draft;var need=d.type==='couple'?2:1;
+  if(!d.nickname.trim()){S.error='表示する名前を入れてください。';render();return;}
+  for(var i=0;i<need;i++){var y=d.years[i];if(typeof y!=='number'||y<1940||y>THIS_YEAR-18){S.error='生まれ年を西暦4桁で入れてください（例：1990）。';render();return;}}
+  var body={type:d.type,nickname:d.nickname.trim().slice(0,20),years:d.years.slice(0,need),area:d.area,hobbies:d.hobbies.slice(0,12),bio:d.bio.slice(0,400),wants:d.wants.slice(0,60),updatedAt:Date.now()};
+  S.saving=true;S.error='';render();
+  S.sb.from('profiles').upsert({id:S.me,type:body.type,nickname:body.nickname,years:body.years,area:body.area,hobbies:body.hobbies,bio:body.bio,wants:body.wants,updated_at:new Date().toISOString()}).then(function(r){
+    S.saving=false;if(r.error){S.error='保存できませんでした。少し待ってからもう一度押してください。';render();return;}
+    S.draft=null;S.profiles[S.me]=normalize(body);setView('search');loadProfiles();});
+}
+
+function viewSearch(){
+  var c=S.cond;var mp=myProfile();
+  var els=[topBar('相手の条件をえらぶ')];
+  var m=h('main');
+  m.appendChild(h('p',{class:'notice',text:'さがす相手：'+typeOf(mp.type).title+'（あなたと同じ種類の登録者だけが表示されます）'}));
+  var step=function(key,delta,label){return h('button',{type:'button',class:'iconbtn',style:'background:var(--soft);font-size:20px','aria-label':label,onclick:function(){
+    c[key]+=delta;if(c.from>c.to){if(key==='from')c.to=c.from;else c.from=c.to;}render();}},delta<0?'−':'＋');};
+  var box=function(key,n){return h('div',{style:'flex:1;display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--line);border-radius:14px;padding:6px'},
+    step(key,-1,n+'を1年前に'),h('span',{style:'font-size:16px;font-weight:700',text:c[key]+'年'}),step(key,1,n+'を1年後に'));};
+  m.appendChild(h('section',null,h('p',{class:'label',text:'相手の生まれ年（夫婦はどちらか一方が入っていればOK）'}),
+    h('div',{style:'display:flex;align-items:center;gap:8px'},box('from','開始年'),h('span',{text:'〜',style:'color:#555A60'}),box('to','終了年'))));
+  var hs=h('div',{class:'chips'});
+  HOBBIES.forEach(function(x){var on=c.hobbies.indexOf(x)>=0;hs.appendChild(h('button',{type:'button',class:'chip','aria-pressed':on?'true':'false',
+    onclick:function(){if(on)c.hobbies=c.hobbies.filter(function(y){return y!==x;});else c.hobbies.push(x);render();}},x));});
+  m.appendChild(h('section',null,h('p',{class:'label',text:'共通の趣味（えらんだうち1つでも合えば表示）'}),hs,
+    h('p',{class:'hint',text:c.hobbies.length?c.hobbies.length+'個えらび中':'えらばなければ趣味では絞り込みません'})));
+  var as=h('div',{class:'chips'});
+  [''].concat(AREAS).forEach(function(a){var on=c.area===a;as.appendChild(h('button',{type:'button',class:'chip','aria-pressed':on?'true':'false',onclick:function(){c.area=a;render();}},a||'指定なし'));});
+  m.appendChild(h('section',null,h('p',{class:'label',text:'エリア'}),as));
+  els.push(m);
+  els.push(h('div',{class:'footer'},h('button',{class:'primary',onclick:function(){try{localStorage.setItem('pairtomo-cond',JSON.stringify(c));}catch(e){}setView('results');}},'この条件でさがす')));
+  els.push(tabs('search'));
+  return els;
+}
+function matches(){
+  var c=S.cond;var mp=myProfile();var out=[];
+  Object.keys(S.profiles).forEach(function(id){
+    if(id===S.me)return;var p=S.profiles[id];if(!p||p.type!==mp.type)return;
+    var ys=(p.years||[]).filter(function(n){return typeof n==='number';});
+    if(!ys.some(function(y){return y>=c.from&&y<=c.to;}))return;
+    if(c.hobbies.length&&!(p.hobbies||[]).some(function(x){return c.hobbies.indexOf(x)>=0;}))return;
+    if(c.area&&p.area!==c.area)return;
+    out.push({id:id,p:p,common:common(p)});
+  });
+  out.sort(function(a,b){return b.common.length-a.common.length||(b.p.updatedAt||0)-(a.p.updatedAt||0);});
+  return out;
+}
+function viewResults(){
+  var list=matches();var c=S.cond;
+  var head=h('header',{class:'top'},h('button',{class:'iconbtn','aria-label':'条件に戻る',onclick:function(){setView('search');}},icon('back')),
+    h('h1',null,'条件に合う相手 ',h('span',{style:'color:var(--accent)',text:list.length+(typeOf(myProfile().type).id==='couple'?'組':'人')})));
+  var m=h('main');
+  var sum=h('div',{class:'summary'},h('span',{text:c.from+'〜'+c.to+'年生まれ'}));
+  c.hobbies.forEach(function(x){sum.appendChild(h('span',{text:x}));});
+  if(c.area)sum.appendChild(h('span',{text:c.area}));
+  m.appendChild(sum);
+  if(!S.profilesLoaded)m.appendChild(h('p',{class:'hint center',text:'読み込み中…'}));
+  else if(!list.length)m.appendChild(h('div',{class:'empty'},'条件に合う相手はまだいません。',h('br'),'条件をゆるめるか、知り合いにも登録してもらいましょう。'));
+  list.forEach(function(r){var p=r.p;
+    var tags=h('div',{class:'chips',style:'gap:6px'});
+    (p.hobbies||[]).slice(0,6).forEach(function(x){tags.appendChild(h('span',{class:'tag'+(r.common.indexOf(x)>=0?' hit':''),text:x}));});
+    m.appendChild(h('button',{class:'card',onclick:function(){setView('detail',{detailId:r.id});}},
+      h('div',{style:'display:flex;align-items:center;gap:12px'},avatars(p,r.id,40),
+        h('div',{style:'display:flex;flex-direction:column;gap:2px;flex-grow:1;min-width:0'},h('span',{style:'font-size:16px;font-weight:700',text:cleanStr(p.nickname,20)}),
+          h('span',{style:'font-size:12px;color:var(--sub)',text:yearsText(p)+'／'+cleanStr(p.area,10)})),
+        h('span',{class:'pill',text:'共通 '+r.common.length})),
+      p.bio?h('div',{style:'font-size:14px;line-height:1.6;color:#3A3E44;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden',text:cleanStr(p.bio,400)}):null,
+      tags));
+  });
+  return [head,m,tabs('search')];
+}
+function viewDetail(){
+  var id=S.detailId;var p=S.profiles[id];
+  if(!p)return [topBar('プロフィール','results'),h('main',null,h('div',{class:'empty',text:'このプロフィールは見つかりませんでした。'})),tabs('search')];
+  var com=common(p);
+  var m=h('main');
+  m.appendChild(h('div',{style:'display:flex;flex-direction:column;align-items:center;gap:8px'},avatars(p,id,72),
+    h('h2',{style:'margin:0;font-size:22px',text:cleanStr(p.nickname,20)}),h('div',{style:'font-size:13px;color:var(--sub)',text:yearsText(p)+'／'+cleanStr(p.area,10)})));
+  var ct=h('div',{class:'chips',style:'gap:6px'});
+  com.forEach(function(x){ct.appendChild(h('span',{class:'tag hit',style:'font-size:13px;padding:4px 12px',text:x}));});
+  if(p.area===(myProfile().area))ct.appendChild(h('span',{class:'tag hit',style:'font-size:13px;padding:4px 12px',text:'同じエリア'}));
+  m.appendChild(h('section',{style:'background:var(--accent-l);border-radius:16px;padding:16px'},h('p',{class:'label',style:'color:var(--accent-d)',text:'あなたとの共通点'}),
+    ct.childNodes.length?ct:h('p',{class:'hint',text:'趣味の共通点はまだありません'})));
+  if(p.bio)m.appendChild(h('section',null,h('p',{class:'label',text:'自己紹介'}),h('p',{style:'margin:0;font-size:14px;line-height:1.8;white-space:pre-wrap',text:cleanStr(p.bio,400)})));
+  if(p.wants)m.appendChild(h('section',null,h('p',{class:'label',text:'一緒にやりたいこと'}),h('p',{style:'margin:0;font-size:14px;line-height:1.8',text:cleanStr(p.wants,60)})));
+  var all=h('div',{class:'chips',style:'gap:6px'});(p.hobbies||[]).forEach(function(x){all.appendChild(h('span',{class:'tag',text:x}));});
+  m.appendChild(h('section',null,h('p',{class:'label',text:'趣味'}),all));
+  return [topBar('プロフィール','results'),m,
+    h('div',{class:'footer'},h('button',{class:'primary',onclick:function(){openChat(id);}},'メッセージを送る'))];
+}
+function openChat(otherId){
+  var t=tid(S.me,otherId);
+  setView('chat',{chatId:t,detailId:otherId,msgs:[],msgsLoaded:false});
+  S.sb.from('messages').select('sender,body,created_at').eq('thread_id',t).order('created_at',{ascending:true}).limit(500).then(function(r){
+    if(S.chatId!==t)return;
+    if(r.error){S.msgsLoaded=true;S.error='メッセージを読み込めませんでした。';render();return;}
+    S.msgs=r.data.map(function(m){return {from:m.sender,text:m.body,at:Date.parse(m.created_at)};});S.msgsLoaded=true;
+    if(S.view==='chat')renderChatOnly();markRead();
+  });
+}
+function markRead(){
+  var th=S.threads.filter(function(x){return x.id===S.chatId;})[0];
+  if(!th||!th.lastAt||(th.readBy[S.me]>=th.lastAt))return;
+  th.readBy[S.me]=th.lastAt;
+  S.sb.from('thread_reads').upsert({user_id:S.me,thread_id:S.chatId,last_read_at:new Date(th.lastAt).toISOString()}).then(function(){});
+}
+var sending=false;
+function sendMsg(text){
+  text=(text||'').trim();if(!text||sending)return;
+  var other=S.chatId.split('__').filter(function(x){return x!==S.me;})[0]||S.me;
+  sending=true;
+  S.sb.from('messages').insert({thread_id:S.chatId,sender:S.me,recipient:other,body:text.slice(0,1000)}).select('sender,body,created_at,thread_id,recipient').single().then(function(r){
+    sending=false;
+    if(r.error){S.error='送信できませんでした。もう一度お試しください。';render();return;}
+    addMessage(r.data);var ta=document.getElementById('compose');if(ta){ta.value='';ta.focus();}
+  });
+}
+function addMessage(m){
+  var at=Date.parse(m.created_at);var t=m.thread_id;
+  var th=S.threads.filter(function(x){return x.id===t;})[0];
+  if(!th){th={id:t,members:[m.sender,m.recipient],readBy:{}};S.threads.push(th);}
+  if(!th.lastAt||at>=th.lastAt){th.lastAt=at;th.lastText=m.body;th.lastFrom=m.sender;}
+  if(m.sender===S.me)th.readBy[S.me]=Math.max(th.readBy[S.me]||0,at);
+  if(S.view==='chat'&&S.chatId===t){
+    var dup=S.msgs.some(function(x){return x.at===at&&x.from===m.sender&&x.text===m.body;});
+    if(!dup){S.msgs.push({from:m.sender,text:m.body,at:at});renderChatOnly();}
+    markRead();
+  }else if(S.view==='threads'||S.view==='results'||S.view==='mypage'||S.view==='search'){render();}
+}
+function loadThreads(){
+  return Promise.all([
+    S.sb.from('messages').select('thread_id,sender,recipient,body,created_at').order('created_at',{ascending:false}).limit(1000),
+    S.sb.from('thread_reads').select('thread_id,last_read_at')
+  ]).then(function(r){
+    var reads={};((r[1]&&r[1].data)||[]).forEach(function(x){reads[x.thread_id]=Date.parse(x.last_read_at);});
+    var map={};((r[0]&&r[0].data)||[]).forEach(function(m){
+      if(map[m.thread_id])return;
+      var rb={};if(reads[m.thread_id])rb[S.me]=reads[m.thread_id];
+      map[m.thread_id]={id:m.thread_id,members:[m.sender,m.recipient],lastText:m.body,lastAt:Date.parse(m.created_at),lastFrom:m.sender,readBy:rb};
+    });
+    S.threads=Object.keys(map).map(function(k){return map[k];});S.threadsLoaded=true;
+    if(S.view==='threads'||S.view==='results'||S.view==='mypage'||S.view==='search')render();
+  });
+}
+function loadProfiles(){
+  return S.sb.from('profiles').select('*').order('updated_at',{ascending:false}).limit(1000).then(function(r){
+    var o={};((r.data)||[]).forEach(function(v){var n=normalize({type:v.type,nickname:v.nickname,years:v.years,area:v.area,hobbies:v.hobbies,bio:v.bio,wants:v.wants,updatedAt:Date.parse(v.updated_at)||0});if(n)o[v.id]=n;});
+    S.profiles=o;S.profilesLoaded=true;
+    if(S.view==='results'||S.view==='threads')render();
+  });
+}
+function chatBody(){
+  var box=h('div',{class:'msgs',id:'msgbox','aria-live':'polite'});
+  box.appendChild(h('div',{style:'align-self:center;font-size:11px;color:#4A4E54;background:#EDEAE3;border-radius:10px;padding:4px 10px',text:'まずはアプリ内でやりとりしましょう'}));
+  if(!S.msgsLoaded)box.appendChild(h('p',{class:'hint center',text:'読み込み中…'}));
+  S.msgs.forEach(function(x){var mine=x.from===S.me;
+    box.appendChild(h('div',{class:'msg '+(mine?'me':'them')},h('div',{class:'bubble',text:cleanStr(x.text,1000)}),h('span',{class:'time',text:fmtTime(x.at)})));});
+  return box;
+}
+function renderChatOnly(){var old=document.getElementById('msgbox');if(!old){render();return;}old.replaceWith(chatBody());window.scrollTo(0,document.body.scrollHeight);}
+function viewChat(){
+  var p=S.profiles[S.detailId]||{nickname:'（退会したユーザー）'};
+  var head=h('header',{class:'top',style:'background:#fff;border-bottom:1px solid var(--line)'},
+    h('button',{class:'iconbtn','aria-label':'メッセージ一覧に戻る',onclick:function(){setView('threads');}},icon('back')),
+    avatars(p,S.detailId,32),
+    h('button',{style:'border:none;background:transparent;font:inherit;text-align:left;cursor:pointer;flex-grow:1;min-height:44px',onclick:function(){if(S.profiles[S.detailId])setView('detail');}},
+      h('div',{style:'font-size:16px;font-weight:700',text:cleanStr(p.nickname,20)}),
+      h('div',{style:'font-size:11px;color:var(--sub)',text:S.profiles[S.detailId]?'プロフィールを見る':''})));
+  var m=h('main',{style:'padding-bottom:8px'},chatBody(),S.error?h('p',{class:'err',role:'alert',text:S.error}):null);
+  var ta=h('textarea',{id:'compose',maxlength:'1000',placeholder:'メッセージを入力','aria-label':'メッセージ',onkeydown:function(e){if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){e.preventDefault();sendMsg(ta.value);}}});
+  var comp=h('div',{class:'composer'},ta,h('button',{class:'send','aria-label':'送信',onclick:function(){sendMsg(ta.value);}},icon('send')));
+  setTimeout(function(){window.scrollTo(0,document.body.scrollHeight);},0);
+  return [head,m,comp];
+}
+function viewThreads(){
+  var m=h('main');
+  if(!S.threadsLoaded)m.appendChild(h('p',{class:'hint center',text:'読み込み中…'}));
+  else if(!S.threads.length)m.appendChild(h('div',{class:'empty'},'まだやりとりはありません。',h('br'),'「さがす」から気になる相手にメッセージを送ってみましょう。'));
+  S.threads.slice().sort(function(a,b){return (b.lastAt||0)-(a.lastAt||0);}).forEach(function(t){
+    var other=(t.members||[]).filter(function(x){return x!==S.me;})[0]||S.me;var p=S.profiles[other]||{nickname:'（退会したユーザー）'};
+    var unread=t.lastFrom&&t.lastFrom!==S.me&&!((t.readBy||{})[S.me]>=t.lastAt);
+    m.appendChild(h('button',{class:'card',style:'flex-direction:row;align-items:center;gap:12px',onclick:function(){openChat(other);}},
+      avatars(p,other,44),
+      h('div',{style:'flex-grow:1;min-width:0;display:flex;flex-direction:column;gap:2px'},
+        h('div',{style:'display:flex;justify-content:space-between;gap:8px'},h('span',{style:'font-weight:700',text:cleanStr(p.nickname,20)}),h('span',{class:'time',text:fmtTime(t.lastAt)})),
+        h('span',{style:'font-size:13px;color:'+(unread?'var(--ink)':'var(--sub)')+';font-weight:'+(unread?'700':'400')+';white-space:nowrap;overflow:hidden;text-overflow:ellipsis',text:(t.lastFrom===S.me?'あなた：':'')+cleanStr(t.lastText,80)}))));
+  });
+  return [topBar('メッセージ'),m,tabs('threads')];
+}
+function viewMypage(){
+  var p=myProfile();
+  var m=h('main');
+  m.appendChild(h('div',{style:'display:flex;flex-direction:column;align-items:center;gap:8px'},avatars(p,S.me,72),
+    h('h2',{style:'margin:0;font-size:22px',text:cleanStr(p.nickname,20)}),h('div',{style:'font-size:13px;color:var(--sub)',text:typeOf(p.type).me+'／'+yearsText(p)+'／'+p.area})));
+  var all=h('div',{class:'chips',style:'gap:6px'});(p.hobbies||[]).forEach(function(x){all.appendChild(h('span',{class:'tag',text:x}));});
+  m.appendChild(h('section',null,h('p',{class:'label',text:'趣味'}),all));
+  if(p.bio)m.appendChild(h('section',null,h('p',{class:'label',text:'自己紹介'}),h('p',{style:'margin:0;font-size:14px;line-height:1.8;white-space:pre-wrap',text:p.bio})));
+  m.appendChild(h('button',{class:'secondary',onclick:function(){S.draft=null;setView('setup');}},'プロフィールを編集する'));
+  m.appendChild(h('p',{class:'notice',text:'これは試用版です。プロフィールは試用している全員が見られます。メッセージは送った相手とだけ見られます。アカウントはこのブラウザに保存されているので、別のスマホやブラウザで開くと別の人として扱われます。本名・住所・電話番号などは書かないでください。'}));
+  return [topBar('マイページ'),m,tabs('mypage')];
+}
+
+function render(){
+  var root=document.getElementById('app');var active=document.activeElement&&document.activeElement.id;
+  var nodes;
+  if(['search','results','detail','chat','threads','mypage'].indexOf(S.view)>=0&&!myProfile())S.view='setup';
+  switch(S.view){
+    case 'loading':nodes=[h('main',null,h('p',{class:'hint center',style:'padding-top:40vh',text:S.offlineNote||'読み込み中…'}))];break;
+    case 'nodb':nodes=viewNoDb();break;
+    case 'setup':nodes=viewSetup();break;
+    case 'search':nodes=viewSearch();break;
+    case 'results':nodes=viewResults();break;
+    case 'detail':nodes=viewDetail();break;
+    case 'chat':nodes=viewChat();break;
+    case 'threads':nodes=viewThreads();break;
+    case 'mypage':nodes=viewMypage();break;
+  }
+  root.replaceChildren.apply(root,nodes);
+  if(active&&active!=='compose'){var el=document.getElementById(active);if(el)el.focus();}
+}
+
+function decideStart(){
+  if(S.view!=='loading')return;
+  if(!S.profilesLoaded)return;
+  setView(myProfile()?'search':'setup');
+}
+
+/* ---------- boot ---------- */
+render();
+(function boot(){
+  var cfg=window.PAIRTOMO_CONFIG||{};
+  if(!window.supabase||!cfg.url||!cfg.anonKey||cfg.url.indexOf('YOUR_')===0){S.bootError='アプリの設定がまだ終わっていません。';setView('nodb');return;}
+  var sb=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{persistSession:true,autoRefreshToken:true}});
+  S.sb=sb;
+  var timer=setTimeout(function(){if(S.view==='loading'){S.offlineNote='サーバーにつながるまで時間がかかっています。通信状況を確認してください。';render();}},10000);
+  sb.auth.getSession().then(function(r){
+    if(r.data&&r.data.session)return r.data.session;
+    return sb.auth.signInAnonymously().then(function(a){if(a.error)throw a.error;return a.data.session;});
+  }).then(function(session){
+    S.me=session.user.id;
+    return Promise.all([loadProfiles(),loadThreads()]);
+  }).then(function(){
+    clearTimeout(timer);decideStart();
+    sb.channel('my-messages').on('postgres_changes',{event:'INSERT',schema:'public',table:'messages',filter:'recipient=eq.'+S.me},function(payload){
+      var m=payload.new;if(m&&typeof m.body==='string')addMessage(m);
+    }).subscribe();
+  }).catch(function(err){clearTimeout(timer);S.bootError='ログインできませんでした。時間をおいて開き直してください。';setView('nodb');});
+})();
+})();
+</script>
+</body>
+</html>
